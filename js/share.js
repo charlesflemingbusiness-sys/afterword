@@ -1,6 +1,7 @@
 /* Shareable result text + native share / clipboard with honest feedback. */
 (function (AW) {
   'use strict';
+  const SHARE_URL = 'https://afterwordapp.vercel.app';
   const SQUARE = { FREEZING: '⬛', COLD: '🟦', COOL: '🟪', WARM: '🟨', HOT: '🟧', BURNING: '🟥', FOUND: '☀️' };
 
   function buildText(state, opts) {
@@ -16,6 +17,8 @@
     lines.push(state.guesses.map(g => SQUARE[g.temperature]).join(''));
     lines.push(state.guesses.map(g => g.temperature).join(' → '));
     if (opts.reveal) lines.push(`The word was ${state.answer.toUpperCase()}.`);
+    lines.push('');
+    lines.push(SHARE_URL);
     return lines.join('\n');
   }
 
