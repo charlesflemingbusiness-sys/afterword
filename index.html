@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>AFTERWORD</title>
+  <meta name="description" content="A daily word-guessing game. Every guess warms or cools a pixel-art beach.">
+  <meta name="theme-color" content="#0d0b1a">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231b2350'/%3E%3Crect y='9' width='16' height='3' fill='%23ff9a6a'/%3E%3Crect y='12' width='16' height='4' fill='%23e6b07a'/%3E%3Crect x='6' y='5' width='4' height='4' fill='%23ffe27a'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-temp="IDLE">
+  <header class="topbar">
+    <div class="brand">
+      <h1 class="logo" aria-label="Afterword">AFTER<span>WORD</span></h1>
+      <p class="meta" id="puzzleMeta">#— · —</p>
+    </div>
+    <div class="top-actions">
+      <span class="streak" id="streakBadge" title="Daily streak">
+        <svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><path d="M3 0h1v1h1v1h1v2h1v3H6v1H2V7H1V4h1V3h1z" fill="currentColor"/><path d="M3 4h2v1h1v2H2V5h1z" fill="#ffe27a"/></svg>
+        <span id="streakCount">0</span>
+      </span>
+      <button class="icon-btn" id="btnHelp" aria-label="How to play" title="How to play">?</button>
+      <button class="icon-btn" id="btnStats" aria-label="Statistics" title="Statistics">
+        <svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><path d="M1 4h1v3H1zM3 2h1v5H3zM5 0h1v7H5zM0 7h8v1H0z" fill="currentColor"/></svg>
+      </button>
+      <button class="icon-btn" id="btnSound" aria-label="Sound" aria-pressed="true" title="Sound">
+        <svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 3h2V2h1V1h1v6H3V6H2V5H0z" fill="currentColor"/><path class="wave" d="M5 3h1v2H5zM6 1h1v1H6zm0 5h1v1H6zm1-4h1v4H7z" fill="currentColor"/><path class="mute" d="M5 2h1v1H5zm2 0h1v1H7zM6 3h1v2H6zM5 5h1v1H5zm2 0h1v1H7z" fill="currentColor"/></svg>
+      </button>
+      <button class="icon-btn" id="btnSettings" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><path d="M3 0h2v1h1v1h1v1h1v2H7v1H6v1H5v1H3V7H2V6H1V5H0V3h1V2h1V1h1zm0 3v2h2V3z" fill="currentColor" fill-rule="evenodd"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="stage" id="stage" aria-label="The beach">
+      <canvas id="beach" role="img" aria-label="A pixel-art beach at twilight"></canvas>
+      <div class="temp-badge" id="tempBadge" aria-hidden="true"><span class="dot"></span><span id="tempBadgeText">TWILIGHT</span></div>
+      <div class="banner" id="dayBanner" hidden></div>
+    </section>
+
+    <div class="mode-tabs" role="tablist" aria-label="Game mode">
+      <button role="tab" id="tabDaily" aria-selected="true" aria-controls="playPanel">Daily <span id="tabDailyNum"></span><span class="done-mark" id="dailyDoneMark" hidden>✓</span></button>
+      <button role="tab" id="tabPractice" aria-selected="false" aria-controls="playPanel">Practice</button>
+    </div>
+
+    <section class="panel" id="playPanel" role="tabpanel">
+      <div class="practice-bar" id="practiceBar" hidden>
+        <label for="practiceLevel">Difficulty</label>
+        <select id="practiceLevel">
+          <option value="easy">Easy · 12 guesses</option>
+          <option value="medium" selected>Medium · 8 guesses</option>
+          <option value="hard">Hard · 6 guesses, no clue</option>
+        </select>
+        <button class="btn ghost" id="btnNewPractice">New word</button>
+      </div>
+
+      <div class="status-row">
+        <div>
+          <p class="instruction">Find the word.</p>
+          <p class="clue" id="clue"></p>
+        </div>
+        <div class="remaining">
+          <div class="pips" id="pips" aria-hidden="true"></div>
+          <p id="remaining">8 guesses left</p>
+        </div>
+      </div>
+
+      <form id="guessForm" class="guess-form" autocomplete="off" novalidate>
+        <label class="sr-only" for="guessInput">Your guess</label>
+        <input id="guessInput" name="guess" type="text" inputmode="text" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="24" placeholder="type a word…" enterkeyhint="go">
+        <button type="submit" class="btn primary" id="btnGuess">Guess</button>
+      </form>
+      <p class="feedback" id="feedback" role="status" aria-live="polite"></p>
+
+      <div class="thermo" id="thermo" aria-hidden="true"></div>
+
+      <div class="hints">
+        <button class="btn ghost small" id="btnHint" type="button">Hint <span class="cost">−150 pts</span></button>
+        <ul class="hint-list" id="hintList"></ul>
+      </div>
+
+      <section class="result" id="resultCard" hidden aria-live="polite"></section>
+
+      <h2 class="history-title" id="historyTitle" hidden>Your guesses</h2>
+      <ol class="history" id="history"></ol>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>New daily word in <strong id="countdown">--:--:--</strong> <span class="muted">(00:00 UTC · <span id="resetLocal"></span> your time)</span></p>
+    <p class="muted">Everything runs in your browser. No accounts, no tracking. <button class="link" id="btnAbout">About the word engine</button></p>
+  </footer>
+
+  <dialog id="dlgHelp" aria-labelledby="helpTitle">
+    <form method="dialog" class="dlg">
+      <h2 id="helpTitle">How to play</h2>
+      <p>Find the hidden word in <strong>8 guesses</strong>. Every guess is scored by <em>meaning</em>, not spelling — and the beach reacts to how close you are.</p>
+      <ul class="legend" id="legend"></ul>
+      <p>Each day has a small <strong>clue</strong> about where the word lives. Stuck? Take a <strong>hint</strong> (it costs points, never a guess).</p>
+      <p>Words the game doesn't know yet aren't counted. Plurals count as the same word.</p>
+      <h3>Scoring</h3>
+      <p class="formula">1000 for finding the word<br>+ 150 per unused guess<br>+ up to 300 for speed (−1 per 2 s)<br>− 150 per hint<br><span class="muted">Best possible: 2,350.</span></p>
+      <h3>Daily</h3>
+      <p>A new word for everyone at <strong>00:00 UTC</strong>. Win on consecutive days to build a streak — a loss or a missed day resets it. Practice mode never touches your daily results.</p>
+      <div class="dlg-actions"><button class="btn primary" value="close">Let's play</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgStats" aria-labelledby="statsTitle">
+    <form method="dialog" class="dlg">
+      <h2 id="statsTitle">Statistics</h2>
+      <div class="stat-grid" id="statGrid"></div>
+      <h3>Guess distribution</h3>
+      <div class="dist" id="dist"></div>
+      <h3>Practice</h3>
+      <p id="practiceStats" class="muted"></p>
+      <div class="dlg-actions"><button class="btn primary" value="close">Close</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgSettings" aria-labelledby="settingsTitle">
+    <form method="dialog" class="dlg">
+      <h2 id="settingsTitle">Settings</h2>
+      <label class="toggle"><input type="checkbox" id="setSound"> <span>Sound effects</span></label>
+      <label class="toggle"><input type="checkbox" id="setMotion"> <span>Reduced motion</span></label>
+      <label class="toggle"><input type="checkbox" id="setReveal"> <span>Include the answer when sharing</span></label>
+      <p class="muted small">Settings and progress are saved only in this browser.</p>
+      <div class="dlg-actions"><button class="btn primary" value="close">Done</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgAbout" aria-labelledby="aboutTitle">
+    <form method="dialog" class="dlg">
+      <h2 id="aboutTitle">The word engine</h2>
+      <p>AFTERWORD scores guesses with a hand-built <strong>semantic graph</strong> of about <span id="vocabSize">5,000</span> everyday English words, written for this game.</p>
+      <p>Each word sits in a category tree (e.g. <em>animal → mammal → canine</em>) and is linked to related words with a strength. Closeness combines the direct link, the best two-step link through a shared neighbour, and how specific the shared category is. Spelling plays no part.</p>
+      <p>It's small and honest: if it doesn't know a word, it says so instead of guessing. The closeness number is a similarity estimate — not a probability.</p>
+      <p class="muted small">Daily answers are bundled in the page, so a determined player could find them in the source. Please don't spoil it for yourself!</p>
+      <div class="dlg-actions"><button class="btn primary" value="close">Close</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="js/data/lexicon.js"></script>
+  <script src="js/data/answers.js"></script>
+  <script src="js/semantic.js"></script>
+  <script src="js/daily.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/beach/palettes.js"></script>
+  <script src="js/beach/beach.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/share.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
