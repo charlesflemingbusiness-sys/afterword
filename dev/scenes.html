@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AFTERWORD — beach states (dev preview)</title>
+  <style>
+    body { background: #0c0c14; color: #ccc; font: 12px monospace; margin: 0; padding: 8px; }
+    .grid { display: grid; grid-template-columns: repeat(2, 640px); gap: 8px; }
+    figure { margin: 0; }
+    canvas { width: 640px; height: 360px; image-rendering: pixelated; display: block; }
+  </style>
+</head>
+<body>
+  <div class="grid" id="grid"></div>
+  <script src="../js/beach/palettes.js"></script>
+  <script src="../js/beach/cat.js"></script>
+  <script src="../js/beach/beach.js"></script>
+  <script>
+    // Renders each state of the SAME scene after its transition has completed.
+    const states = (location.hash.slice(1) || 'IDLE,FREEZING,COLD,COOL,WARM,HOT,BURNING,FOUND').split(',');
+    states.forEach(s => {
+      const fig = document.createElement('figure');
+      const c = document.createElement('canvas');
+      const cap = document.createElement('figcaption');
+      cap.textContent = s;
+      fig.append(c, cap);
+      document.getElementById('grid').append(fig);
+      const b = new AW.Beach(c);
+      for (let i = 0; i < 40; i++) b.renderFrame(0.05);
+      b.setTemperature(s === 'IDLE' ? null : s, { celebrate: s === 'FOUND' });
+      for (let i = 0; i < 50; i++) b.renderFrame(0.05);
+    });
+  </script>
+</body>
+</html>

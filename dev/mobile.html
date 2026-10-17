@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>AFTERWORD dev — phone frames</title>
+<style>body{margin:0;background:#333;display:flex;gap:16px;padding:16px}iframe{border:0;background:#000}</style></head>
+<body>
+  <iframe id="a" width="375" height="1100"></iframe>
+  <iframe id="b" width="320" height="1100"></iframe>
+  <script>
+    const h = location.hash || '#cold,cool,warm,hot,burning';
+    document.getElementById('a').src = 'play.html' + h;
+    document.getElementById('b').src = 'play.html' + h;
+  </script>
+</body>
+</html>

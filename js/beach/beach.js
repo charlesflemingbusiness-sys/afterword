@@ -337,6 +337,7 @@
       this.pulse = 0;
       this.pulseColor = [255, 255, 255];
       this.bursts = [];
+      this.cat = AW.BeachCat ? new AW.BeachCat() : null;
       this.running = false;
       this._last = 0;
       this._frame = this._frame.bind(this);
@@ -351,6 +352,7 @@
       this.from = this.params;
       this.to = AW.BeachPalettes.COMPILED[key];
       this.state = key;
+      if (this.cat) this.cat.setMood(key, !!opts.pulse);
       this.blend = opts.instant ? 1 : 0;
       this.duration = this.reducedMotion ? 0.5 : 1.8;
       if (opts.instant) this.params = this.lerpParams(this.from, this.to, 1);
@@ -371,7 +373,21 @@
       }
     }
 
-    setReducedMotion(v) { this.reducedMotion = !!v; if (v) this.bursts = []; }
+    /** The cat walks to the campfire and falls asleep. Call once when a game is won; instant for a restored win. */
+    catSleep(opts) {
+      if (!this.cat) return;
+      this.cat.sleep({ instant: !!(opts && opts.instant) || this.reducedMotion });
+      if (!this.running) this.renderFrame(0);
+    }
+
+    /** The cat wakes and goes back to its spot by the hut (new game, or a mode that isn't won). */
+    catWake(opts) {
+      if (!this.cat) return;
+      this.cat.wake({ instant: !!(opts && opts.instant) || this.reducedMotion });
+      if (!this.running) this.renderFrame(0);
+    }
+
+    setReducedMotion(v) { this.reducedMotion = !!v; if (v) { this.bursts = []; if (this.cat) this.cat.skip(); } }
 
     lerpParams(a, b, k) {
       const out = {};
@@ -402,7 +418,10 @@
 
     /** Advance animation by dt seconds and draw one frame. */
     renderFrame(dt) {
-      if (!this.reducedMotion) this.t += dt;
+      if (!this.reducedMotion) {
+        this.t += dt;
+        if (this.cat) this.cat.update(dt);
+      }
       if (this.blend < 1) {
         this.blend = Math.min(1, this.blend + dt / this.duration);
         const e = this.blend < 0.5 ? 2 * this.blend * this.blend : 1 - Math.pow(-2 * this.blend + 2, 2) / 2;
@@ -602,6 +621,9 @@
       // 10. Campfire flames.
       const fire = P.fire;
       if (fire > 0.05) this.drawFire(fire, t);
+
+      // 10b. The cat (before the lights, so the campfire glow falls on it too).
+      if (this.cat) this.cat.draw(this, P);
 
       // 11. Lights.
       if (fire > 0.05) {

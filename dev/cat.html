@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AFTERWORD — beach cat (dev preview)</title>
+  <style>
+    body { background: #0c0c14; color: #ccc; font: 12px monospace; margin: 0; padding: 8px; }
+    h2 { font-size: 12px; margin: 10px 0 4px; color: #fff; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; }
+    figure { margin: 0; }
+    canvas { image-rendering: pixelated; display: block; }
+  </style>
+</head>
+<body>
+  <h2>Moods (close-up, 6×)</h2><div class="row" id="moods"></div>
+  <h2>Idle actions</h2><div class="row" id="actions"></div>
+  <h2>Win sequence</h2><div class="row" id="win"></div>
+  <h2>In the scene (2×)</h2><div class="row" id="scene"></div>
+  <script src="../js/beach/palettes.js"></script>
+  <script src="../js/beach/cat.js"></script>
+  <script src="../js/beach/beach.js"></script>
+  <script>
+    // Dev-only: renders the cat in each mood, action and win phase, cropped and enlarged.
+    const ZOOM = 6, CROP = { x: 146, y: 140, w: 52, h: 28 };
+    function shot(target, label, setup, crop, zoom) {
+      crop = crop || CROP; zoom = zoom || ZOOM;
+      const c = document.createElement('canvas');
+      const b = new AW.Beach(c);
+      setup(b);
+      b.renderFrame(0);
+      const out = document.createElement('canvas');
+      out.width = crop.w * zoom; out.height = crop.h * zoom;
+      const x = out.getContext('2d');
+      x.imageSmoothingEnabled = false;
+      x.drawImage(c, crop.x, crop.y, crop.w, crop.h, 0, 0, out.width, out.height);
+      const fig = document.createElement('figure'), cap = document.createElement('figcaption');
+      cap.textContent = label;
+      fig.append(out, cap);
+      document.getElementById(target).append(fig);
+    }
+    const settle = (b, s, n) => { b.setTemperature(s, { celebrate: false }); for (let i = 0; i < (n || 50); i++) b.renderFrame(0.05); };
+    const freeze = b => { b.cat.update = () => {}; };  // hold the pose we set up
+
+    ['IDLE', 'FREEZING', 'COLD', 'COOL', 'WARM', 'HOT', 'BURNING', 'FOUND'].forEach(s =>
+      shot('moods', s, b => { settle(b, s); b.cat.action = null; b.cat.blinkAt = -9; freeze(b); }));
+
+    const act = (type, at, extra) => b => {
+      settle(b, extra && extra.state || 'IDLE');
+      Object.assign(b.cat, extra && extra.cat || {});
+      b.cat.startAction(type, -1); b.cat.action.t = b.cat.t - at; b.cat.blinkAt = -9; freeze(b);
+    };
+    shot('actions', 'look left', act('look', 0.5));
+    shot('actions', 'ear twitch', act('ear', 0.1));
+    shot('actions', 'tail flick', act('flick', 0.45));
+    shot('actions', 'yawn', act('yawn', 0.7));
+    shot('actions', 'shiver (cold)', act('shiver', 0.07, { state: 'FREEZING' }));
+    shot('actions', 'idle lying down', b => { settle(b, 'IDLE'); b.cat.loafing = true; b.cat.action = null; b.cat.blinkAt = -9; freeze(b); });
+    shot('actions', 'blink', b => { settle(b, 'IDLE'); b.cat.action = null; b.cat.blinkAt = b.cat.t; freeze(b); });
+
+    const win = (label, secs) => shot('win', label, b => {
+      settle(b, 'FOUND');
+      b.cat.blinkAt = -9; b.cat.sleep();
+      for (let i = 0; i < secs * 20; i++) { b.renderFrame(0.05); }
+      b.cat.blinkAt = -9;
+      freeze(b);
+    });
+    win('notice 0.3s', 0.3); win('walking 1.2s', 1.2); win('walking 1.35s', 1.35); win('sit', 3.0);
+    win('lie down', 3.6); win('curl, eyes closing', 4.4); win('asleep (exhale)', 7.6); win('asleep (inhale)', 8.4);
+
+    const full = { x: 0, y: 0, w: 320, h: 180 };
+    shot('scene', 'IDLE', b => settle(b, 'IDLE'), full, 2);
+    shot('scene', 'FREEZING', b => settle(b, 'FREEZING'), full, 2);
+    shot('scene', 'FOUND, asleep', b => { settle(b, 'FOUND'); b.cat.sleep({ instant: true }); b.renderFrame(0.05); }, full, 2);
+  </script>
+</body>
+</html>

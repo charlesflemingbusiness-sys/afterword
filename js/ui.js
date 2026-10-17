@@ -61,6 +61,13 @@
     }
   }
 
+  // The cat sleeps by the campfire once the shown game is won. Only a fresh win (onSubmit)
+  // plays the walk; restoring or switching to a won game puts it there directly.
+  function syncCat(st) {
+    if (!beach) return;
+    if (st.status === 'won') beach.catSleep({ instant: true }); else beach.catWake();
+  }
+
   function renderHeader() {
     const stats = St.getStats();
     $('streakCount').textContent = St.effectiveStreak(stats, today);
@@ -251,6 +258,7 @@
     AW.Sound.play('submit');
     setTimeout(() => AW.Sound.play(r.guess.temperature), 60);
     setSceneTemp(r.guess.temperature, { pulse: true });
+    if (r.won) beach.catSleep();
     if (r.finished) {
       if (st.mode === 'daily') { persist(st); St.recordDaily(st); }
       else {
@@ -306,6 +314,7 @@
     mode = m;
     const st = current();
     setSceneTemp(G.sceneTemperature(st), { celebrate: false });
+    syncCat(st);
     renderPlay();
     if (window.matchMedia('(pointer: fine)').matches && st.status === 'playing') $('guessInput').focus();
   }
@@ -314,6 +323,7 @@
     practice = newPractice($('practiceLevel').value);
     if (mode !== 'practice') mode = 'practice';
     setSceneTemp(null);
+    syncCat(practice);
     renderPlay();
     setFeedback(`New ${G.PRACTICE_LEVELS[practice.level].label.toLowerCase()} practice word. Good luck!`, '');
     $('guessInput').focus();
@@ -373,7 +383,7 @@
       const wasPlaying = daily && daily.status === 'playing' && daily.guesses.length;
       loadDaily();
       renderHeader();
-      if (mode === 'daily') { setSceneTemp(G.sceneTemperature(daily), { celebrate: false }); renderPlay(); }
+      if (mode === 'daily') { setSceneTemp(G.sceneTemperature(daily), { celebrate: false }); syncCat(daily); renderPlay(); }
       toast(wasPlaying ? 'A new day began (UTC) — a new daily word is ready.' : 'A new daily word is ready!');
     }
   }
@@ -408,6 +418,7 @@
     beach.setTemperature(G.sceneTemperature(daily), { instant: true, celebrate: false });
     document.body.dataset.temp = G.sceneTemperature(daily) || 'IDLE';
     setSceneTemp(G.sceneTemperature(daily), { instant: true, celebrate: false });
+    syncCat(daily);
     beach.start();
     renderHeader();
     renderPlay();

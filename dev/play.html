@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>AFTERWORD dev — seed a game</title></head>
+<body style="background:#111;color:#ccc;font:13px monospace">
+<pre id="out">seeding…</pre>
+<script src="../js/data/lexicon.js"></script>
+<script src="../js/data/answers.js"></script>
+<script src="../js/semantic.js"></script>
+<script src="../js/daily.js"></script>
+<script src="../js/scoring.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/game.js"></script>
+<script>
+  // Dev helper: plays guesses into today's daily state through the real game rules,
+  // then opens the game. Usage: dev/play.html#cold,warm,found  (relative words picked from the engine)
+  // or dev/play.html#words=banana,water  (literal words). Add &mode=practice for practice.
+  const E = new AW.SemanticEngine(AW.LEXICON_SRC, AW.LEXICON_ALIASES, AW.LEXICON_IRREGULAR);
+  const day = AW.Daily.dayNumber();
+  const entry = AW.Daily.answerForDay(day);
+  localStorage.clear();
+  AW.Storage.saveSettings(Object.assign(AW.Storage.getSettings(), { seenHelp: true, sound: false }));
+  const st = AW.Game.newState({ mode: 'daily', day, entry, guessLimit: 8 });
+  const spec = decodeURIComponent(location.hash.slice(1));
+  const pickBand = band => {
+    const used = new Set(st.guesses.map(g => g.word));
+    if (band === 'FOUND') return entry.word;
+    const n = E.neighbours(entry.word).find(n => AW.SemanticEngine.temperature(n.score) === band && !used.has(n.word) && !E.inferred.has(n.word));
+    return n ? n.word : null;
+  };
+  let words = [];
+  if (spec.startsWith('words=')) words = spec.slice(6).split(',');
+  else if (spec) words = spec.split(',').map(b => pickBand(b.toUpperCase())).filter(Boolean);
+  words.forEach((w, i) => AW.Game.submit(E, st, w, Date.now() - (words.length - i) * 20000));
+  AW.Storage.saveDaily(st);
+  if (st.status !== 'playing') AW.Storage.recordDaily(st);
+  document.getElementById('out').textContent = `answer=${entry.word} guesses=${st.guesses.map(g => g.word + ':' + g.temperature).join(' ')}`;
+  setTimeout(() => { location.href = '../index.html'; }, 50);
+</script>
+</body>
+</html>
